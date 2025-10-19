@@ -1,38 +1,21 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SNSコメントリスク分析システム</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SNSコメント リスク分析ツール</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;600;700&display=swap');
-    body {
-      font-family: 'Inter', 'Noto Sans JP', sans-serif;
-      background-color: #f7f9fb;
-    }
+    body { font-family: 'Inter', 'Noto Sans JP', sans-serif; background-color: #f7f9fb; }
     .container-box { box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
-    .classification-tag {
-      padding: 4px 12px;
-      border-radius: 9999px;
-      font-weight: 600;
-      font-size: 0.875rem;
-      display: inline-block;
-    }
-    /* カラー定義 (CDNモード対応) */
+    .classification-tag { padding: 4px 12px; border-radius: 9999px; font-weight: 600; font-size: 0.875rem; display: inline-block; }
     .color-safe { background-color: #dcfce7; color: #166534; }
     .color-slander { background-color: #fef9c3; color: #854d0e; }
     .color-fake { background-color: #ffedd5; color: #9a3412; }
     .color-crime { background-color: #fee2e2; color: #991b1b; }
     .color-bot { background-color: #f3e8ff; color: #6b21a8; }
-
-    .loader {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #3b82f6;
-      border-radius: 50%;
-      width: 24px; height: 24px;
-      animation: spin 1s linear infinite;
-    }
+    .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
     @keyframes spin { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
     .api-link { color: #2563eb; font-weight: 500; }
     .api-link:hover { text-decoration: underline; color: #1e40af; }
@@ -40,27 +23,20 @@
 </head>
 <body class="p-4 sm:p-8 min-h-screen">
   <div class="max-w-4xl mx-auto">
-
     <header class="mb-8">
       <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">SNSコメント リスク分析ツール</h1>
       <p class="text-gray-600">Google Gemini または OpenAI GPTを使い、SNSコメントを犯罪・誹謗中傷・誤情報などに分類します。</p>
     </header>
 
-    <!-- APIキーの説明 -->
     <details class="bg-blue-50 border border-blue-200 p-6 rounded-xl mb-8 container-box">
       <summary class="text-lg font-bold text-blue-800 cursor-pointer">🔑 APIキーの取得と料金について</summary>
       <div class="mt-4 space-y-4 text-gray-700 border-t border-blue-200 pt-4">
-        <h3 class="text-xl font-semibold text-gray-800">⚠️ コストについて</h3>
+        <h3 class="text-xl font-semibold">Gemini APIキー</h3>
         <ul class="list-disc ml-4">
-          <li>Google Gemini API と OpenAI API は従量課金制です。</li>
-          <li>必ず公式料金ページを確認し、利用制限を設定してください。</li>
-        </ul>
-        <h3 class="text-xl font-semibold text-gray-800 pt-4">Gemini APIキーの取得</h3>
-        <ul class="list-disc ml-4">
-          <li><a href="https://ai.google.dev/gemini-api/docs/api-key" target="_blank" class="api-link">Google AI Studio (発行ページ)</a></li>
+          <li><a href="https://ai.google.dev/gemini-api/docs/api-key" target="_blank" class="api-link">Google AI Studio</a></li>
           <li><a href="https://ai.google.dev/pricing" target="_blank" class="api-link">料金ページ</a></li>
         </ul>
-        <h3 class="text-xl font-semibold text-gray-800 pt-4">OpenAI APIキーの取得</h3>
+        <h3 class="text-xl font-semibold">OpenAI APIキー</h3>
         <ul class="list-disc ml-4">
           <li><a href="https://platform.openai.com/account/api-keys" target="_blank" class="api-link">OpenAI Platform</a></li>
           <li><a href="https://openai.com/pricing" target="_blank" class="api-link">料金ページ</a></li>
@@ -68,49 +44,37 @@
       </div>
     </details>
 
-    <!-- 設定 -->
     <div class="bg-white p-6 sm:p-8 rounded-xl container-box mb-8">
       <h2 class="text-xl font-bold text-gray-800 mb-4">分析設定</h2>
-
-      <label for="model-select" class="block text-sm font-semibold text-gray-700 mb-2">AIモデルを選択</label>
-      <select id="model-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 mb-4">
-        <option value="gemini">Google Gemini (ファクトチェック対応)</option>
+      <label for="model-select" class="block text-sm font-semibold text-gray-700 mb-2">AIモデル</label>
+      <select id="model-select" class="w-full p-3 border border-gray-300 rounded-lg mb-4">
+        <option value="gemini">Google Gemini</option>
         <option value="openai-4o">OpenAI GPT-4o</option>
         <option value="openai-3.5">OpenAI GPT-3.5</option>
       </select>
-
       <label id="key-label" class="block text-sm font-semibold text-gray-700 mb-2">APIキー</label>
-      <input id="api-key-input" type="password" placeholder="APIキーを入力" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 mb-6">
-
-      <label class="block text-lg font-semibold text-gray-700 mb-3">分析したいSNSコメントを入力してください</label>
-      <textarea id="comment-input" rows="4" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-blue-500" placeholder="例: あの会社は明日倒産する。これは内部情報だ。"></textarea>
-
-      <button id="analyze-button" onclick="analyzeComment()" class="mt-4 w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 flex items-center justify-center disabled:opacity-50">
+      <input id="api-key-input" type="password" placeholder="sk-または AIキーを入力" class="w-full p-3 border border-gray-300 rounded-lg mb-6" />
+      <label class="block text-lg font-semibold text-gray-700 mb-3">コメントを入力</label>
+      <textarea id="comment-input" rows="4" class="w-full p-4 border border-gray-300 rounded-lg" placeholder="例: あの会社は明日倒産する。これは内部情報だ。"></textarea>
+      <button id="analyze-button" onclick="analyzeComment()" class="mt-4 w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-bold rounded-lg flex items-center justify-center disabled:opacity-50">
         <div id="button-text">コメントを分析する</div>
         <div id="loading-spinner" class="hidden loader ml-2"></div>
       </button>
     </div>
 
-    <!-- 結果 -->
     <div id="results-area" class="hidden bg-white p-6 sm:p-8 rounded-xl container-box">
       <h2 class="text-2xl font-bold text-gray-800 mb-4">分析結果</h2>
       <div class="mb-4"><span class="text-gray-600 font-medium mr-2">分類:</span><span id="classification-display" class="classification-tag"></span></div>
       <div class="mb-6">
-        <h3 class="text-xl font-semibold text-gray-700 mb-2">根拠・分析</h3>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">根拠</h3>
         <div id="reasoning-display" class="text-gray-800 p-4 bg-gray-50 rounded-lg border border-gray-200 whitespace-pre-wrap"></div>
-      </div>
-      <div id="sources-container" class="hidden mt-4 pt-4 border-t border-gray-200">
-        <h3 class="text-xl font-semibold text-gray-700 mb-2">情報源 (ファクトチェック)</h3>
-        <ul id="sources-list" class="space-y-2 text-sm"></ul>
       </div>
       <button onclick="downloadResult()" class="mt-4 px-4 py-2 bg-gray-100 border rounded-md hover:bg-gray-200 text-sm font-semibold text-gray-700">結果を保存</button>
     </div>
 
-    <!-- エラー -->
     <div id="error-message" class="hidden mt-8 p-4 bg-red-100 text-red-700 border border-red-200 rounded-lg">
       <span id="error-text"></span>
     </div>
-
   </div>
 
 <script>
@@ -150,7 +114,9 @@ async function analyzeComment() {
         }
       };
       const res = await fetch(`${ENDPOINTS.gemini}?key=${apiKey}`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body)
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
       });
       const data = await res.json();
       responseData = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
@@ -158,15 +124,28 @@ async function analyzeComment() {
       const openaiModel = model === "openai-4o" ? "gpt-4o-mini" : "gpt-3.5-turbo-0125";
       const res = await fetch(ENDPOINTS.openai, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
         body: JSON.stringify({
           model: openaiModel,
-          messages: [{ role: "system", content: prompt }, { role: "user", content: comment }],
+          messages: [
+            { role: "system", content: prompt },
+            { role: "user", content: comment }
+          ],
           response_format: { type: "json_object" }
         })
       });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`OpenAI APIエラー (${res.status}): ${errText}`);
+      }
+
       const data = await res.json();
-      responseData = JSON.parse(data.choices?.[0]?.message?.content || "{}");
+      if (!data.choices?.length) throw new Error("OpenAIから有効な応答が返されませんでした。");
+      responseData = JSON.parse(data.choices[0].message.content || "{}");
       responseData.isGrounded = false;
     }
 
@@ -178,7 +157,7 @@ async function analyzeComment() {
   }
 }
 
-function generateSystemPrompt(comment, model) {
+function generateSystemPrompt() {
   return `あなたはSNSコメントを以下の5分類で識別するAIです:
 1. 犯罪行為/脅迫
 2. 誹謗中傷/ハラスメント
@@ -206,9 +185,18 @@ function updateUI(a) {
   errorMessage.classList.add("hidden");
 }
 
-function showError(msg){ errorText.textContent = msg; errorMessage.classList.remove("hidden"); }
-function setLoading(b){ analyzeButton.disabled = b; loadingSpinner.classList.toggle("hidden",!b); buttonText.textContent = b?"分析中...":"コメントを分析する"; }
-function downloadResult(){
+function showError(msg) {
+  errorText.textContent = msg;
+  errorMessage.classList.remove("hidden");
+}
+
+function setLoading(b) {
+  analyzeButton.disabled = b;
+  loadingSpinner.classList.toggle("hidden", !b);
+  buttonText.textContent = b ? "分析中..." : "コメントを分析する";
+}
+
+function downloadResult() {
   const content = `分類: ${classificationDisplay.textContent}\n\n根拠:\n${reasoningDisplay.textContent}`;
   const blob = new Blob([content], { type: "text/plain" });
   const a = document.createElement("a");
