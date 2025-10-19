@@ -3,153 +3,330 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SNSコメント リスク分析ツール</title>
+  <title>SNSコメントリスク分析ツール</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    /* 日本語フォントと全体の背景 */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+JP:wght@400;600;700&display=swap');
-    body { font-family: 'Inter', 'Noto Sans JP', sans-serif; background-color: #f7f9fb; }
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      background-color: #f7f9fb;
+    }
     .container-box { box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
-    .classification-tag { padding: 4px 12px; border-radius: 9999px; font-weight: 600; font-size: 0.875rem; display: inline-block; }
+
+    /* --- カスタムリンクスタイル (青い下線付き) --- */
+    .custom-link {
+      color: #1e40af; /* blue-700 */
+      text-decoration: none;
+      font-weight: 500;
+      padding-bottom: 2px;
+      position: relative;
+      transition: color 0.3s ease;
+      display: inline-block;
+    }
+    .custom-link::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 2px;
+      background-color: #3b82f6; /* blue-500 */
+      transition: height 0.3s ease, background-color 0.3s ease;
+    }
+    .custom-link:hover { color: #1d4ed8; }
+    .custom-link:hover::after {
+      height: 4px;
+      background-color: #1e40af;
+    }
+    /* --- 分類タグのスタイル --- */
+    .classification-tag {
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      display: inline-block;
+      min-width: 100px;
+      text-align: center;
+    }
     .color-safe { background-color: #dcfce7; color: #166534; }
     .color-slander { background-color: #fef9c3; color: #854d0e; }
-    .color-fake { background-color: #ffedd5; color: #9a3412; }
+    .color-false { background-color: #ffedd5; color: #9a3412; }
     .color-crime { background-color: #fee2e2; color: #991b1b; }
     .color-bot { background-color: #f3e8ff; color: #6b21a8; }
-    .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+
+    /* ローダー */
+    .loader {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3b82f6;
+      border-radius: 50%;
+      width: 24px; height: 24px;
+      animation: spin 1s linear infinite;
+    }
     @keyframes spin { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
-    .api-link { color: #2563eb; font-weight: 500; }
-    .api-link:hover { text-decoration: underline; color: #1e40af; }
   </style>
 </head>
 <body class="p-4 sm:p-8 min-h-screen">
-  <div class="max-w-4xl mx-auto">
-    <header class="mb-8">
+  <div class="max-w-4xl mx-auto w-full">
+
+    <header class="mb-8 text-center">
       <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">SNSコメント リスク分析ツール</h1>
-      <p class="text-gray-600">Google Gemini または OpenAI GPTを使い、SNSコメントを犯罪・誹謗中傷・誤情報などに分類します。</p>
+      <p class="text-gray-600">AI（Gemini/GPT）を使い、コメントを危険度別に分類し、事実確認（ファクトチェック）を行います。</p>
     </header>
 
-    <details class="bg-blue-50 border border-blue-200 p-6 rounded-xl mb-8 container-box">
-      <summary class="text-lg font-bold text-blue-800 cursor-pointer">🔑 APIキーの取得と料金について</summary>
-      <div class="mt-4 space-y-4 text-gray-700 border-t border-blue-200 pt-4">
-        <h3 class="text-xl font-semibold">Gemini APIキー</h3>
-        <ul class="list-disc ml-4">
-          <li><a href="https://ai.google.dev/gemini-api/docs/api-key" target="_blank" class="api-link">Google AI Studio</a></li>
-          <li><a href="https://ai.google.dev/pricing" target="_blank" class="api-link">料金ページ</a></li>
+    <!-- APIキーとコストの説明 (更新箇所) -->
+    <details class="bg-red-50 border border-red-300 p-6 rounded-xl mb-8 container-box">
+      <summary class="text-lg font-bold text-red-800 cursor-pointer">⚠️ APIキーの取得、コスト、セキュリティについて</summary>
+      <div class="mt-4 space-y-4 text-gray-700 border-t border-red-300 pt-4">
+        
+        <h3 class="text-xl font-semibold text-green-700">✅ 無料利用枠について (重要)</h3>
+        <ul class="list-disc ml-4 space-y-2">
+            <li>**Gemini / GPT:** ほとんどのAIプラットフォームには、**新規ユーザー向けの無料利用枠**またはクレジットが用意されています。まずは無料でテストを開始できます。</li>
+            <li>ただし、無料枠の範囲は限られており、無料枠を超えると**自動的に従量課金**に移行します。必ず次の「コストと課金」の項目を確認し、利用制限を設定してください。</li>
         </ul>
-        <h3 class="text-xl font-semibold">OpenAI APIキー</h3>
-        <ul class="list-disc ml-4">
-          <li><a href="https://platform.openai.com/account/api-keys" target="_blank" class="api-link">OpenAI Platform</a></li>
-          <li><a href="https://openai.com/pricing" target="_blank" class="api-link">料金ページ</a></li>
+
+        <h3 class="text-xl font-semibold text-red-800 pt-4">🚨 コストと課金に関する重要事項</h3>
+        <ul class="list-disc ml-4 space-y-2">
+            <li>**従量課金制:** Google Gemini API、OpenAI APIはすべて従量課金制です。分析を実行するたびに、コメントの文字数に応じて費用が発生します。</li>
+            <li>**利用制限の設定:** 予期せぬ高額請求を防ぐため、**必ず各プラットフォーム（Google CloudまたはOpenAI Platform）で利用制限（Billing Limit）を設定**してください。</li>
+            <li>**ファクトチェックの影響:** Geminiのファクトチェック機能は、分析時にGoogle Searchを利用するため、応答時間が長くなる場合があります。</li>
         </ul>
+
+        <h3 class="text-xl font-semibold text-gray-800 pt-4">🌐 Gemini (推奨)</h3>
+        <p class="text-sm">Geminiモデルを選択すると、**Google Search**によるリアルタイムなファクトチェック（情報源の提示）が自動で有効になります。</p>
+        <ul class="list-disc ml-4">
+          <li>キー発行: <a href="https://ai.google.dev/gemini-api/docs/api-key" target="_blank" class="custom-link">Google AI Studio (APIキーページ)</a></li>
+          <li>料金詳細: <a href="https://ai.google.dev/pricing" target="_blank" class="custom-link">Google AI 価格ページ</a></li>
+        </ul>
+
+        <h3 class="text-xl font-semibold text-gray-800 pt-4">💻 GPT (OpenAI)</h3>
+        <ul class="list-disc ml-4">
+          <li>キー発行: <a href="https://platform.openai.com/account/api-keys" target="_blank" class="custom-link">OpenAI Platform (APIキーページ)</a></li>
+          <li>料金詳細: <a href="https://openai.com/pricing" target="_blank" class="custom-link">OpenAI 価格ページ</a></li>
+        </ul>
+        
+        <h3 class="text-xl font-semibold text-red-800 pt-4">セキュリティ上の注意</h3>
+        <p class="text-sm font-bold">このツールはブラウザ上でAPIキーを直接使用します。キーの管理には十分注意し、分析が終了したらすぐにキーを削除してください。</p>
       </div>
     </details>
 
+    <!-- 設定と入力 -->
     <div class="bg-white p-6 sm:p-8 rounded-xl container-box mb-8">
-      <h2 class="text-xl font-bold text-gray-800 mb-4">分析設定</h2>
-      <label for="model-select" class="block text-sm font-semibold text-gray-700 mb-2">AIモデル</label>
-      <select id="model-select" class="w-full p-3 border border-gray-300 rounded-lg mb-4">
-        <option value="gemini">Google Gemini</option>
-        <option value="openai-4o">OpenAI GPT-4o</option>
-        <option value="openai-3.5">OpenAI GPT-3.5</option>
-      </select>
-      <label id="key-label" class="block text-sm font-semibold text-gray-700 mb-2">APIキー</label>
-      <input id="api-key-input" type="password" placeholder="sk-または AIキーを入力" class="w-full p-3 border border-gray-300 rounded-lg mb-6" />
-      <label class="block text-lg font-semibold text-gray-700 mb-3">コメントを入力</label>
-      <textarea id="comment-input" rows="4" class="w-full p-4 border border-gray-300 rounded-lg" placeholder="例: あの会社は明日倒産する。これは内部情報だ。"></textarea>
-      <button id="analyze-button" onclick="analyzeComment()" class="mt-4 w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-bold rounded-lg flex items-center justify-center disabled:opacity-50">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">分析設定と入力</h2>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label for="model-select" class="block text-sm font-semibold text-gray-700 mb-2">AIモデルを選択</label>
+            <select id="model-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+              <option value="gemini">Google Gemini (ファクトチェック対応)</option>
+              <option value="openai">OpenAI GPT-4o mini</option>
+            </select>
+          </div>
+          <div>
+            <label id="key-label" for="api-key-input" class="block text-sm font-semibold text-gray-700 mb-2">APIキー</label>
+            <input id="api-key-input" type="password" placeholder="APIキーを入力" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+          </div>
+      </div>
+
+      <label class="block text-lg font-semibold text-gray-700 mb-3 mt-4">分析したいSNSコメントを入力してください</label>
+      <textarea id="comment-input" rows="4" class="w-full p-4 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="例: あの会社は明日倒産する。これは内部情報だ。"></textarea>
+
+      <button id="analyze-button" onclick="analyzeComment()" class="mt-4 w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition duration-150 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
         <div id="button-text">コメントを分析する</div>
         <div id="loading-spinner" class="hidden loader ml-2"></div>
       </button>
     </div>
 
+    <!-- 結果 -->
     <div id="results-area" class="hidden bg-white p-6 sm:p-8 rounded-xl container-box">
       <h2 class="text-2xl font-bold text-gray-800 mb-4">分析結果</h2>
-      <div class="mb-4"><span class="text-gray-600 font-medium mr-2">分類:</span><span id="classification-display" class="classification-tag"></span></div>
+      
+      <div class="mb-4 flex items-center">
+        <span class="text-gray-600 font-medium mr-4 text-lg">分類:</span>
+        <span id="classification-display" class="classification-tag"></span>
+      </div>
+      
       <div class="mb-6">
-        <h3 class="text-xl font-semibold text-gray-700 mb-2">根拠</h3>
+        <h3 class="text-xl font-semibold text-gray-700 mb-2">根拠・分析</h3>
         <div id="reasoning-display" class="text-gray-800 p-4 bg-gray-50 rounded-lg border border-gray-200 whitespace-pre-wrap"></div>
       </div>
-      <button onclick="downloadResult()" class="mt-4 px-4 py-2 bg-gray-100 border rounded-md hover:bg-gray-200 text-sm font-semibold text-gray-700">結果を保存</button>
+      
+      <!-- Gemini使用時のみ表示される情報源エリア -->
+      <div id="sources-container" class="hidden mt-4 pt-4 border-t border-gray-200">
+        <h3 class="text-xl font-semibold text-gray-700 mb-2 flex items-center">
+            <svg class="w-5 h-5 mr-1 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.27a1 1 0 01.112.181l.088.22a1 1 0 01.037.289v9.544a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h7.828a1 1 0 01.707.293l3.586 3.586a1 1 0 01.293.707V7z"></path></svg>
+            情報源 (ファクトチェック)
+        </h3>
+        <ul id="sources-list" class="space-y-2 text-sm ml-2"></ul>
+      </div>
     </div>
 
-    <div id="error-message" class="hidden mt-8 p-4 bg-red-100 text-red-700 border border-red-200 rounded-lg">
+    <!-- エラー -->
+    <div id="error-message" class="hidden mt-8 p-4 bg-red-100 text-red-700 border border-red-200 rounded-lg container-box">
+      <span class="font-bold">エラー: </span>
       <span id="error-text"></span>
     </div>
+
   </div>
 
 <script>
 const ENDPOINTS = {
-  gemini: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+  // GeminiはCanvas環境のキー自動補完に依存
+  gemini: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent",
   openai: "https://api.openai.com/v1/chat/completions"
 };
 
+const CLASSIFICATION_MAP = {
+    "犯罪助長": { color: "color-crime", display: "犯罪行為/脅迫" },
+    "誹謗中傷": { color: "color-slander", display: "誹謗中傷/ハラスメント" },
+    "虚偽情報": { color: "color-false", display: "フェイクニュース/誤情報" },
+    "自動投稿（bot）": { color: "color-bot", display: "Bot/自動生成" },
+    "安全": { color: "color-safe", display: "安全/問題なし" },
+    "不明": { color: "color-safe", display: "不明/解析不能" }
+};
+
+// --- DOM要素 ---
+const modelSelect = document.getElementById('model-select');
+const apiKeyInput = document.getElementById('api-key-input');
+const commentInput = document.getElementById('comment-input');
+const analyzeButton = document.getElementById('analyze-button');
+const buttonText = document.getElementById('button-text');
+const loadingSpinner = document.getElementById('loading-spinner');
+const resultsArea = document.getElementById('results-area');
+const classificationDisplay = document.getElementById('classification-display');
+const reasoningDisplay = document.getElementById('reasoning-display');
+const sourcesContainer = document.getElementById('sources-container');
+const sourcesList = document.getElementById('sources-list');
+const errorMessage = document.getElementById('error-message');
+const errorText = document.getElementById('error-text');
+const keyLabel = document.getElementById('key-label');
+
+// --- 初期化とイベントリスナー ---
+modelSelect.addEventListener('change', updateAPIKeyPrompt);
+document.addEventListener('DOMContentLoaded', updateAPIKeyPrompt);
+
+/**
+ * モデル選択時のUIとAPIキー入力の制御
+ */
+function updateAPIKeyPrompt() {
+    const model = modelSelect.value;
+    const isGemini = model === 'gemini';
+    
+    // Canvas環境で自動補完される場合はAPIキー入力を無効化
+    const isCanvasAutoFilled = isGemini && typeof __initial_auth_token !== 'undefined';
+
+    if (isGemini) {
+        keyLabel.textContent = isCanvasAutoFilled ? "Google Gemini APIキー (自動補完されます)" : "Google Gemini APIキー";
+        apiKeyInput.placeholder = isCanvasAutoFilled ? "自動補完済み" : "AIzで始まるキーを入力";
+    } else {
+        keyLabel.textContent = "OpenAI APIキー";
+        apiKeyInput.placeholder = "sk-で始まるキーを入力";
+    }
+
+    // キー入力の無効化/有効化
+    apiKeyInput.disabled = isCanvasAutoFilled;
+    apiKeyInput.value = isCanvasAutoFilled ? 'CANVAS_AUTO_FILLED' : '';
+}
+
+
+/**
+ * コメントを分析し、結果をUIに表示するメイン関数
+ */
 async function analyzeComment() {
   const comment = commentInput.value.trim();
-  const apiKey = apiKeyInput.value.trim();
   const model = modelSelect.value;
-
-  if (!apiKey) return showError("APIキーを入力してください。");
+  let apiKey = apiKeyInput.value.trim();
+  
   if (!comment) return showError("コメントを入力してください。");
+  
+  const isGemini = model === 'gemini';
+  
+  // APIキーのチェックと設定
+  if (isGemini) {
+      // GeminiはCanvas環境の自動補完に依存
+      apiKey = ""; 
+  } else if (!apiKey || apiKey === 'CANVAS_AUTO_FILLED') {
+      return showError("OpenAIモデルを使用するにはAPIキーを入力してください。");
+  }
 
   setLoading(true);
   try {
-    const prompt = generateSystemPrompt(comment, model);
-    let responseData;
+    let result = null;
+    let rawData = null; 
 
-    if (model === "gemini") {
-      const body = {
-        contents: [{ parts: [{ text: comment }] }],
-        systemInstruction: { parts: [{ text: prompt }] },
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              classification: { type: "STRING" },
-              reasoning: { type: "STRING" },
-              isGrounded: { type: "BOOLEAN" }
-            },
-            required: ["classification", "reasoning", "isGrounded"]
-          }
+    if (isGemini) {
+        // Gemini: Google Search groundingを有効にし、JSONスキーマで構造化応答を要求
+        const body = {
+            contents: [{ parts: [{ text: comment }] }],
+            tools: [{ "google_search": {} }], // ファクトチェックを有効化
+            systemInstruction: { parts: [{ text: generateSystemPrompt(model) }] },
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        classification: { type: "STRING" },
+                        reasoning: { type: "STRING" }
+                    },
+                    required: ["classification", "reasoning"]
+                },
+                model: "gemini-2.5-flash-preview-09-2025" 
+            }
+        };
+
+        const res = await fetchWithExponentialBackoff(`${ENDPOINTS.gemini}?key=${apiKey}`, {
+            method: "POST", 
+            headers: { "Content-Type": "application/json" }, 
+            body: JSON.stringify(body)
+        });
+        
+        rawData = await res.json();
+        
+        const candidate = rawData.candidates?.[0];
+        const jsonText = candidate?.content?.parts?.[0]?.text;
+        
+        if (!jsonText) {
+            console.error("Gemini API Error:", rawData);
+            throw new Error(rawData.error?.message || "Geminiからの応答が不正です。");
         }
-      };
-      const res = await fetch(`${ENDPOINTS.gemini}?key=${apiKey}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      const data = await res.json();
-      responseData = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
+        
+        result = JSON.parse(jsonText);
+        result.isGrounded = true;
+        result.groundingMetadata = candidate.groundingMetadata;
+
     } else {
-      const openaiModel = model === "openai-4o" ? "gpt-4o-mini" : "gpt-3.5-turbo-0125";
-      const res = await fetch(ENDPOINTS.openai, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: openaiModel,
-          messages: [
-            { role: "system", content: prompt },
-            { role: "user", content: comment }
-          ],
-          response_format: { type: "json_object" }
-        })
-      });
+        // OpenAI: JSON形式で構造化応答を要求
+        const openaiModel = "gpt-4o-mini";
+        const res = await fetchWithExponentialBackoff(ENDPOINTS.openai, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+            body: JSON.stringify({
+                model: openaiModel,
+                messages: [{ role: "system", content: generateSystemPrompt(model) }, { role: "user", content: comment }],
+                response_format: { type: "json_object" }
+            })
+        });
+        
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`OpenAI APIエラー: ${res.status} ${text}`);
+        }
+        
+        rawData = await res.json();
+        const jsonText = rawData.choices?.[0]?.message?.content;
 
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`OpenAI APIエラー (${res.status}): ${errText}`);
-      }
-
-      const data = await res.json();
-      if (!data.choices?.length) throw new Error("OpenAIから有効な応答が返されませんでした。");
-      responseData = JSON.parse(data.choices[0].message.content || "{}");
-      responseData.isGrounded = false;
+        if (!jsonText) {
+            throw new Error("OpenAIからの結果解析に失敗しました。");
+        }
+        
+        result = JSON.parse(jsonText);
+        result.isGrounded = false;
     }
 
-    updateUI(responseData);
+    if (!result.classification) throw new Error("結果の解析に失敗しました。classificationフィールドが見つかりません。");
+
+    updateResultUI(result);
+
   } catch (err) {
     showError("分析中にエラーが発生しました: " + err.message);
   } finally {
@@ -157,53 +334,121 @@ async function analyzeComment() {
   }
 }
 
-function generateSystemPrompt() {
-  return `あなたはSNSコメントを以下の5分類で識別するAIです:
-1. 犯罪行為/脅迫
-2. 誹謗中傷/ハラスメント
-3. フェイクニュース/誤情報
-4. Bot/自動生成
-5. 安全/問題なし
-出力はJSON形式で {"classification": "...", "reasoning": "...", "isGrounded": true/false} のみ返答。`;
+/**
+ * 指数バックオフ付きフェッチ関数（レート制限対策）
+ */
+async function fetchWithExponentialBackoff(url, options, maxRetries = 5) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            const response = await fetch(url, options);
+            if (response.status !== 429 && response.ok) {
+                return response;
+            } else if (response.status === 429) {
+                const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500;
+                await new Promise(resolve => setTimeout(resolve, delay));
+            } else {
+                return response; // エラーレスポンスもそのまま返す
+            }
+        } catch (error) {
+            if (attempt === maxRetries - 1) {
+                throw error;
+            }
+            const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500;
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+    throw new Error("API呼び出しが最大リトライ回数を超えました。");
 }
 
-function updateUI(a) {
-  const classification = a.classification || "不明";
-  const reasoning = a.reasoning || "理由が提供されませんでした。";
-  classificationDisplay.className = "classification-tag";
-  const map = {
-    "犯罪行為/脅迫": "color-crime",
-    "誹謗中傷/ハラスメント": "color-slander",
-    "フェイクニュース/誤情報": "color-fake",
-    "Bot/自動生成": "color-bot",
-    "安全/問題なし": "color-safe"
-  };
-  classificationDisplay.classList.add(map[classification] || "color-safe");
-  classificationDisplay.textContent = classification;
-  reasoningDisplay.textContent = reasoning;
-  resultsArea.classList.remove("hidden");
-  errorMessage.classList.add("hidden");
+/**
+ * AIモデルに渡すシステムプロンプトを生成する
+ */
+function generateSystemPrompt(model) {
+    const classifications = Object.keys(CLASSIFICATION_MAP).filter(c => c !== "不明").join('」「');
+
+    let prompt = `あなたはSNSコメントを以下の分類で識別するAIリスクアナリストです。
+    分類: 「${classifications}」のいずれか。
+    
+    分析結果は、必ずJSON形式で {"classification": "分類名", "reasoning": "分類の根拠と分析結果を日本語で詳細に記述してください。"} のみ返答してください。`;
+
+    if (model === 'gemini') {
+        prompt += `
+        あなたはGoogle Searchツールを使用できます。コメント内の事実（特に虚偽情報やフェイクニュースの可能性）を検証し、分析に反映させてください。`;
+    }
+
+    return prompt;
 }
 
-function showError(msg) {
-  errorText.textContent = msg;
-  errorMessage.classList.remove("hidden");
+/**
+ * 分析結果に基づいてUIを更新する
+ * @param {object} result - 分析結果オブジェクト
+ */
+function updateResultUI(result) {
+    const classification = result.classification || "不明";
+    const reasoning = result.reasoning || "理由が提供されませんでした。";
+    const mapping = CLASSIFICATION_MAP[classification] || CLASSIFICATION_MAP["不明"];
+    
+    // 1. 分類タグの更新
+    classificationDisplay.className = "classification-tag";
+    classificationDisplay.classList.add(mapping.color);
+    classificationDisplay.textContent = mapping.display;
+    
+    // 2. 根拠の更新
+    reasoningDisplay.textContent = reasoning;
+    
+    // 3. 情報源の更新 (Geminiかつデータが存在する場合)
+    sourcesList.innerHTML = '';
+    const isGeminiWithSources = result.isGrounded && result.groundingMetadata;
+
+    if (isGeminiWithSources) {
+        const sources = result.groundingMetadata.groundingAttributions
+            .map(attr => ({
+                uri: attr.web?.uri,
+                title: attr.web?.title,
+            }))
+            .filter(source => source.uri && source.title);
+
+        if (sources.length > 0) {
+            sourcesContainer.classList.remove('hidden');
+            sources.forEach(source => {
+                const li = document.createElement('li');
+                li.className = 'flex items-start';
+                li.innerHTML = `
+                    <svg class="w-4 h-4 mt-1 mr-2 text-blue-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M11 3a1 1 0 100 2h3a1 1 0 100-2h-3zM3 11a1 1 0 102 0v-3a1 1 0 10-2 0v3zM11 15a1 1 0 100 2h3a1 1 0 100-2h-3zM5 11a1 1 0 100 2h3a1 1 0 100-2H5zM12 7a1 1 0 100-2h1a1 1 0 100 2h-1zM5 7a1 1 0 100 2h1a1 1 0 100-2H5zM12 11a1 1 0 100 2h1a1 1 0 100-2h-1zM5 15a1 1 0 100 2h1a1 1 0 100-2H5zM15 11a1 1 0 100 2h1a1 1 0 100-2h-1zM15 15a1 1 0 100 2h1a1 1 0 100-2h-1zM15 7a1 1 0 100 2h1a1 1 0 100-2h-1zM7 3a1 1 0 100 2h1a1 1 0 100-2H7zM7 15a1 1 0 100 2h1a1 1 0 100-2H7zM3 15a1 1 0 102 0v-1a1 1 0 10-2 0v1zM3 3a1 1 0 102 0v-1a1 1 0 10-2 0v1zM15 3a1 1 0 102 0v-1a1 1 0 10-2 0v1zM15 15a1 1 0 102 0v-1a1 1 0 10-2 0v1z"></path></svg>
+                    <a href="${source.uri}" target="_blank" class="custom-link text-sm break-all">${source.title}</a>
+                `;
+                sourcesList.appendChild(li);
+            });
+        } else {
+            sourcesContainer.classList.add('hidden');
+        }
+    } else {
+        sourcesContainer.classList.add('hidden');
+    }
+
+    // 4. 結果表示エリアを表示
+    resultsArea.classList.remove("hidden");
+    errorMessage.classList.add("hidden");
 }
 
-function setLoading(b) {
-  analyzeButton.disabled = b;
-  loadingSpinner.classList.toggle("hidden", !b);
-  buttonText.textContent = b ? "分析中..." : "コメントを分析する";
+/**
+ * エラーメッセージを表示する
+ */
+function showError(msg){ 
+    errorText.textContent = msg; 
+    errorMessage.classList.remove("hidden"); 
+    resultsArea.classList.add("hidden");
 }
 
-function downloadResult() {
-  const content = `分類: ${classificationDisplay.textContent}\n\n根拠:\n${reasoningDisplay.textContent}`;
-  const blob = new Blob([content], { type: "text/plain" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "分析結果.txt";
-  a.click();
+/**
+ * ローディング状態を切り替える
+ */
+function setLoading(b){ 
+    analyzeButton.disabled = b; 
+    loadingSpinner.classList.toggle("hidden",!b); 
+    buttonText.textContent = b ? "分析中..." : "分析開始"; 
 }
 </script>
 </body>
 </html>
+
