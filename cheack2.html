@@ -54,6 +54,7 @@
     .color-false { background-color: #ffedd5; color: #9a3412; }
     .color-crime { background-color: #fee2e2; color: #991b1b; }
     .color-bot { background-color: #f3e8ff; color: #6b21a8; }
+    .color-unknown { background-color: #e5e7eb; color: #4b5563; }
 
     /* ローダー */
     .loader {
@@ -71,29 +72,29 @@
 
     <header class="mb-8 text-center">
       <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">SNSコメント リスク分析ツール</h1>
-      <p class="text-gray-600">AI（Gemini/GPT）を使い、コメントを危険度別に分類し、事実確認（ファクトチェック）を行います。</p>
+      <p class="text-gray-600">AIを使い、コメントを危険度別に分類し、論調（感情的/論理的）を分析します。</p>
     </header>
 
-    <!-- APIキーとコストの説明 (更新箇所) -->
+    <!-- APIキーとコストの説明 -->
     <details class="bg-red-50 border border-red-300 p-6 rounded-xl mb-8 container-box">
       <summary class="text-lg font-bold text-red-800 cursor-pointer">⚠️ APIキーの取得、コスト、セキュリティについて</summary>
       <div class="mt-4 space-y-4 text-gray-700 border-t border-red-300 pt-4">
         
         <h3 class="text-xl font-semibold text-green-700">✅ 無料利用枠について (重要)</h3>
         <ul class="list-disc ml-4 space-y-2">
-            <li>**Gemini / GPT:** ほとんどのAIプラットフォームには、**新規ユーザー向けの無料利用枠**またはクレジットが用意されています。まずは無料でテストを開始できます。</li>
-            <li>ただし、無料枠の範囲は限られており、無料枠を超えると**自動的に従量課金**に移行します。必ず次の「コストと課金」の項目を確認し、利用制限を設定してください。</li>
+            <li>**AIプラットフォーム:** ほとんどのAIプラットフォームには、**新規ユーザー向けの無料利用枠**があります。まずは無料でテストを開始できます。</li>
+            <li>ただし、無料枠を超えると**自動的に従量課金**に移行します。必ず次の「コストと課金」の項目を確認し、利用制限を設定してください。</li>
         </ul>
 
         <h3 class="text-xl font-semibold text-red-800 pt-4">🚨 コストと課金に関する重要事項</h3>
         <ul class="list-disc ml-4 space-y-2">
             <li>**従量課金制:** Google Gemini API、OpenAI APIはすべて従量課金制です。分析を実行するたびに、コメントの文字数に応じて費用が発生します。</li>
             <li>**利用制限の設定:** 予期せぬ高額請求を防ぐため、**必ず各プラットフォーム（Google CloudまたはOpenAI Platform）で利用制限（Billing Limit）を設定**してください。</li>
-            <li>**ファクトチェックの影響:** Geminiのファクトチェック機能は、分析時にGoogle Searchを利用するため、応答時間が長くなる場合があります。</li>
+            <li>**コスト効率の選択肢:** **Gemini 2.5 Flash-Lite**と**GPT-4o mini**が、現在最も低コストで利用できる高性能モデルです。</li>
         </ul>
 
-        <h3 class="text-xl font-semibold text-gray-800 pt-4">🌐 Gemini (推奨)</h3>
-        <p class="text-sm">Geminiモデルを選択すると、**Google Search**によるリアルタイムなファクトチェック（情報源の提示）が自動で有効になります。</p>
+        <h3 class="text-xl font-semibold text-gray-800 pt-4">🌐 Google Gemini (推奨)</h3>
+        <p class="text-sm">Geminiモデルを選択すると、**Web参照機能**により最新情報を参照して分析できますが、**構造化出力との両立のため、正式な情報源は表示されません**。</p>
         <ul class="list-disc ml-4">
           <li>キー発行: <a href="https://ai.google.dev/gemini-api/docs/api-key" target="_blank" class="custom-link">Google AI Studio (APIキーページ)</a></li>
           <li>料金詳細: <a href="https://ai.google.dev/pricing" target="_blank" class="custom-link">Google AI 価格ページ</a></li>
@@ -118,13 +119,14 @@
           <div>
             <label for="model-select" class="block text-sm font-semibold text-gray-700 mb-2">AIモデルを選択</label>
             <select id="model-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-              <option value="gemini">Google Gemini (ファクトチェック対応)</option>
-              <option value="openai">OpenAI GPT-4o mini</option>
+              <option value="gemini-flash">Google Gemini 2.5 Flash (高性能)</option>
+              <option value="gemini-lite" selected>Google Gemini 2.5 Flash-Lite (最安価)</option>
+              <option value="openai">OpenAI GPT-4o mini (最安価)</option>
             </select>
           </div>
           <div>
             <label id="key-label" for="api-key-input" class="block text-sm font-semibold text-gray-700 mb-2">APIキー</label>
-            <input id="api-key-input" type="password" placeholder="APIキーを入力" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+            <input id="api-key-input" type="password" placeholder="AIzで始まるキーを入力" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
           </div>
       </div>
 
@@ -141,9 +143,15 @@
     <div id="results-area" class="hidden bg-white p-6 sm:p-8 rounded-xl container-box">
       <h2 class="text-2xl font-bold text-gray-800 mb-4">分析結果</h2>
       
-      <div class="mb-4 flex items-center">
-        <span class="text-gray-600 font-medium mr-4 text-lg">分類:</span>
-        <span id="classification-display" class="classification-tag"></span>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div class="flex items-center">
+          <span class="text-gray-600 font-medium mr-4 text-lg">分類:</span>
+          <span id="classification-display" class="classification-tag"></span>
+        </div>
+        <div class="flex items-center">
+          <span class="text-gray-600 font-medium mr-4 text-lg">論調:</span>
+          <span id="argument-type-display" class="font-bold text-lg text-gray-900 bg-gray-100 p-2 rounded-lg text-center w-full"></span>
+        </div>
       </div>
       
       <div class="mb-6">
@@ -151,13 +159,14 @@
         <div id="reasoning-display" class="text-gray-800 p-4 bg-gray-50 rounded-lg border border-gray-200 whitespace-pre-wrap"></div>
       </div>
       
-      <!-- Gemini使用時のみ表示される情報源エリア -->
+      <!-- 情報源エリア (構造化出力優先のため、ファクトチェック機能は非使用) -->
       <div id="sources-container" class="hidden mt-4 pt-4 border-t border-gray-200">
         <h3 class="text-xl font-semibold text-gray-700 mb-2 flex items-center">
             <svg class="w-5 h-5 mr-1 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.27a1 1 0 01.112.181l.088.22a1 1 0 01.037.289v9.544a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h7.828a1 1 0 01.707.293l3.586 3.586a1 1 0 01.293.707V7z"></path></svg>
-            情報源 (ファクトチェック)
+            情報源
         </h3>
         <ul id="sources-list" class="space-y-2 text-sm ml-2"></ul>
+        <p class="text-xs text-gray-500 mt-2">※ 現在、JSON構造化出力との両立のため、正式な情報源の表示はできません。</p>
       </div>
     </div>
 
@@ -170,10 +179,22 @@
   </div>
 
 <script>
-const ENDPOINTS = {
-  // GeminiはCanvas環境のキー自動補完に依存
-  gemini: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent",
-  openai: "https://api.openai.com/v1/chat/completions"
+const MODEL_CONFIG = {
+  "gemini-flash": {
+    endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent",
+    modelName: "gemini-2.5-flash-preview-09-2025",
+    type: "gemini"
+  },
+  "gemini-lite": {
+    endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite-preview:generateContent", // Flash-Liteのエンドポイント
+    modelName: "gemini-2.5-flash-lite-preview",
+    type: "gemini"
+  },
+  "openai": {
+    endpoint: "https://api.openai.com/v1/chat/completions",
+    modelName: "gpt-4o-mini", // GPTの安価モデル
+    type: "openai"
+  }
 };
 
 const CLASSIFICATION_MAP = {
@@ -182,7 +203,7 @@ const CLASSIFICATION_MAP = {
     "虚偽情報": { color: "color-false", display: "フェイクニュース/誤情報" },
     "自動投稿（bot）": { color: "color-bot", display: "Bot/自動生成" },
     "安全": { color: "color-safe", display: "安全/問題なし" },
-    "不明": { color: "color-safe", display: "不明/解析不能" }
+    "不明": { color: "color-unknown", display: "不明/解析不能" }
 };
 
 // --- DOM要素 ---
@@ -194,6 +215,7 @@ const buttonText = document.getElementById('button-text');
 const loadingSpinner = document.getElementById('loading-spinner');
 const resultsArea = document.getElementById('results-area');
 const classificationDisplay = document.getElementById('classification-display');
+const argumentTypeDisplay = document.getElementById('argument-type-display'); 
 const reasoningDisplay = document.getElementById('reasoning-display');
 const sourcesContainer = document.getElementById('sources-container');
 const sourcesList = document.getElementById('sources-list');
@@ -206,26 +228,46 @@ modelSelect.addEventListener('change', updateAPIKeyPrompt);
 document.addEventListener('DOMContentLoaded', updateAPIKeyPrompt);
 
 /**
- * モデル選択時のUIとAPIキー入力の制御
+ * モデル選択時のUI表示を更新する
  */
 function updateAPIKeyPrompt() {
-    const model = modelSelect.value;
-    const isGemini = model === 'gemini';
-    
-    // Canvas環境で自動補完される場合はAPIキー入力を無効化
+    const modelKey = modelSelect.value;
+    const config = MODEL_CONFIG[modelKey];
+    const isGemini = config.type === 'gemini';
     const isCanvasAutoFilled = isGemini && typeof __initial_auth_token !== 'undefined';
 
     if (isGemini) {
-        keyLabel.textContent = isCanvasAutoFilled ? "Google Gemini APIキー (自動補完されます)" : "Google Gemini APIキー";
-        apiKeyInput.placeholder = isCanvasAutoFilled ? "自動補完済み" : "AIzで始まるキーを入力";
+        keyLabel.textContent = "Google Gemini APIキー";
+        apiKeyInput.placeholder = isCanvasAutoFilled ? "キーを入力（空欄で自動認証を試行）" : "AIzで始まるキーを入力";
     } else {
         keyLabel.textContent = "OpenAI APIキー";
         apiKeyInput.placeholder = "sk-で始まるキーを入力";
     }
 
-    // キー入力の無効化/有効化
-    apiKeyInput.disabled = isCanvasAutoFilled;
-    apiKeyInput.value = isCanvasAutoFilled ? 'CANVAS_AUTO_FILLED' : '';
+    if (apiKeyInput.value === 'CANVAS_AUTO_FILLED') {
+        apiKeyInput.value = '';
+    }
+}
+
+/**
+ * APIキーの形式をチェックするヘルパー関数
+ */
+function validateApiKey(modelType, key) {
+    if (modelType === 'gemini') {
+        // Canvas環境の自動認証に依存する場合は空欄を許可
+        if (key === '') return { valid: true }; 
+        if (!key.startsWith('AIza')) {
+            return { valid: false, message: "Geminiキーは通常 'AIza' で始まります。キーが正しいか確認してください。" };
+        }
+    } else if (modelType === 'openai') {
+        if (key === '') {
+             return { valid: false, message: "OpenAIモデルを使用するにはAPIキーを入力してください。" };
+        }
+        if (!key.startsWith('sk-')) {
+            return { valid: false, message: "OpenAIキーは 'sk-' で始まります。キーが正しいか確認してください。" };
+        }
+    }
+    return { valid: true };
 }
 
 
@@ -234,101 +276,138 @@ function updateAPIKeyPrompt() {
  */
 async function analyzeComment() {
   const comment = commentInput.value.trim();
-  const model = modelSelect.value;
+  const modelKey = modelSelect.value;
+  const config = MODEL_CONFIG[modelKey];
   let apiKey = apiKeyInput.value.trim();
   
   if (!comment) return showError("コメントを入力してください。");
   
-  const isGemini = model === 'gemini';
+  const isGemini = config.type === 'gemini';
+
+  // 1. APIキーの検証
+  const keyValidation = validateApiKey(config.type, apiKey);
+  if (!keyValidation.valid) {
+      return showError("APIキーの形式が間違っている可能性があります: " + keyValidation.message);
+  }
   
-  // APIキーのチェックと設定
-  if (isGemini) {
-      // GeminiはCanvas環境の自動補完に依存
-      apiKey = ""; 
-  } else if (!apiKey || apiKey === 'CANVAS_AUTO_FILLED') {
-      return showError("OpenAIモデルを使用するにはAPIキーを入力してください。");
+  // 2. APIキーの設定 (Geminiの場合、空欄なら自動認証に依存)
+  if (isGemini && apiKey === '') {
+      console.log("Relying on Canvas environment for Gemini API Key.");
+  } else if (!isGemini && apiKey === '') {
+      return showError("OpenAIモデルを選択しました。APIキーを入力してください。");
   }
 
   setLoading(true);
   try {
     let result = null;
-    let rawData = null; 
+    let response = null;
 
     if (isGemini) {
-        // Gemini: Google Search groundingを有効にし、JSONスキーマで構造化応答を要求
+        console.log(`--- Gemini API Call (Model: ${config.modelName}) ---`);
+        // APIキーはクエリパラメータに設定。手動で入力されていない場合は空欄。
+        const url = `${config.endpoint}?key=${apiKey}`;
+        
         const body = {
             contents: [{ parts: [{ text: comment }] }],
-            tools: [{ "google_search": {} }], // ファクトチェックを有効化
-            systemInstruction: { parts: [{ text: generateSystemPrompt(model) }] },
+            systemInstruction: { parts: [{ text: generateSystemPrompt(config.modelName) }] },
+            // 構造化出力
             generationConfig: {
                 responseMimeType: "application/json",
                 responseSchema: {
                     type: "OBJECT",
                     properties: {
                         classification: { type: "STRING" },
+                        argument_type: { type: "STRING" }, 
                         reasoning: { type: "STRING" }
                     },
-                    required: ["classification", "reasoning"]
-                },
-                model: "gemini-2.5-flash-preview-09-2025" 
-            }
+                    required: ["classification", "argument_type", "reasoning"] 
+                }
+            },
+            // Web参照 (Flashモデルでのみ有効な指示を出す)
+            // tools: [{ "google_search": {} }],
         };
-
-        const res = await fetchWithExponentialBackoff(`${ENDPOINTS.gemini}?key=${apiKey}`, {
+        
+        response = await fetchWithExponentialBackoff(url, {
             method: "POST", 
             headers: { "Content-Type": "application/json" }, 
             body: JSON.stringify(body)
         });
         
-        rawData = await res.json();
-        
-        const candidate = rawData.candidates?.[0];
-        const jsonText = candidate?.content?.parts?.[0]?.text;
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Gemini HTTP Error Response:", response.status, errorText);
+            
+            let userMessage = `Gemini API呼び出しエラー: ステータスコード ${response.status}。`;
+            if (response.status === 400) {
+                 userMessage = `リクエストの形式が不正です。**Gemini APIキー、または入力内容、プロジェクトの有効化**を確認してください。サーバーからの詳細: ${errorText.substring(0, 150)}...`;
+            } else if (response.status === 401 || response.status === 403) {
+                userMessage += "APIキーが正しく設定されているか、または課金が有効か確認してください。";
+            } else {
+                 userMessage += "不明なエラーです。";
+            }
+            throw new Error(userMessage);
+        }
+
+        const rawData = await response.json();
+        const jsonText = rawData.candidates?.[0]?.content?.parts?.[0]?.text;
         
         if (!jsonText) {
-            console.error("Gemini API Error:", rawData);
-            throw new Error(rawData.error?.message || "Geminiからの応答が不正です。");
+            console.error("Gemini API Error: Missing JSON content in response.", rawData);
+            throw new Error(rawData.error?.message || "Geminiからの応答が不正です。APIキーが有効か、課金が有効か確認してください。");
         }
         
         result = JSON.parse(jsonText);
-        result.isGrounded = true;
-        result.groundingMetadata = candidate.groundingMetadata;
 
-    } else {
-        // OpenAI: JSON形式で構造化応答を要求
-        const openaiModel = "gpt-4o-mini";
-        const res = await fetchWithExponentialBackoff(ENDPOINTS.openai, {
+    } else { // OpenAI
+        console.log(`--- OpenAI API Call (Model: ${config.modelName}) ---`);
+        const body = {
+            model: config.modelName,
+            messages: [{ role: "system", content: generateSystemPrompt(config.modelName) }, { role: "user", content: comment }],
+            response_format: { type: "json_object" }
+        };
+        
+        response = await fetchWithExponentialBackoff(config.endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-            body: JSON.stringify({
-                model: openaiModel,
-                messages: [{ role: "system", content: generateSystemPrompt(model) }, { role: "user", content: comment }],
-                response_format: { type: "json_object" }
-            })
+            body: JSON.stringify(body)
         });
         
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`OpenAI APIエラー: ${res.status} ${text}`);
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("OpenAI HTTP Error Response:", response.status, errorText);
+            let userMessage = `OpenAI API呼び出しエラー: ステータスコード ${response.status}。`;
+            if (response.status === 401) {
+                userMessage += "APIキーが有効ではありません。キーを確認してください。";
+            }
+            throw new Error(userMessage);
         }
         
-        rawData = await res.json();
+        const rawData = await response.json();
         const jsonText = rawData.choices?.[0]?.message?.content;
 
         if (!jsonText) {
-            throw new Error("OpenAIからの結果解析に失敗しました。");
+            console.error("OpenAI API Error: Missing JSON content in response.", rawData);
+            throw new Error("OpenAIからの結果解析に失敗しました。APIキーが有効か、課金が有効か確認してください。");
         }
         
-        result = JSON.parse(jsonText);
-        result.isGrounded = false;
+        // JSON以外の文字列が含まれる可能性を考慮し、JSONブロックを抽出してからパース
+        let cleanedJsonText = jsonText.trim();
+        if (cleanedJsonText.startsWith("```json")) {
+            cleanedJsonText = cleanedJsonText.substring(7, cleanedJsonText.lastIndexOf("```")).trim();
+        } else if (cleanedJsonText.startsWith("```")) { 
+             cleanedJsonText = cleanedJsonText.substring(3, cleanedJsonText.lastIndexOf("```")).trim();
+        }
+
+        result = JSON.parse(cleanedJsonText);
     }
 
-    if (!result.classification) throw new Error("結果の解析に失敗しました。classificationフィールドが見つかりません。");
+    if (!result.classification || !result.argument_type) throw new Error("結果の解析に失敗しました。classificationまたはargument_typeフィールドが見つかりません。");
 
     updateResultUI(result);
 
   } catch (err) {
-    showError("分析中にエラーが発生しました: " + err.message);
+    showError("分析中にエラーが発生しました: " + err.message + "。コンソール（F12）で詳細を確認してください。");
+    console.error("Fatal Analysis Error:", err);
   } finally {
     setLoading(false);
   }
@@ -344,15 +423,19 @@ async function fetchWithExponentialBackoff(url, options, maxRetries = 5) {
             if (response.status !== 429 && response.ok) {
                 return response;
             } else if (response.status === 429) {
+                // Rate limit: delay and retry
+                console.warn(`Rate limit hit (429). Retrying in ${Math.pow(2, attempt)}s...`);
                 const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500;
                 await new Promise(resolve => setTimeout(resolve, delay));
             } else {
-                return response; // エラーレスポンスもそのまま返す
+                return response; // Return non-OK response for caller to handle
             }
         } catch (error) {
             if (attempt === maxRetries - 1) {
                 throw error;
             }
+            // Network error: delay and retry
+            console.error(`Network error on attempt ${attempt + 1}. Retrying...`, error);
             const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500;
             await new Promise(resolve => setTimeout(resolve, delay));
         }
@@ -363,18 +446,22 @@ async function fetchWithExponentialBackoff(url, options, maxRetries = 5) {
 /**
  * AIモデルに渡すシステムプロンプトを生成する
  */
-function generateSystemPrompt(model) {
+function generateSystemPrompt(modelName) {
     const classifications = Object.keys(CLASSIFICATION_MAP).filter(c => c !== "不明").join('」「');
 
-    let prompt = `あなたはSNSコメントを以下の分類で識別するAIリスクアナリストです。
-    分類: 「${classifications}」のいずれか。
+    // 論調の判別を追加し、JSON出力指示を厳格化
+    let prompt = `あなたはSNSコメントを以下の分類で識別し、さらに**論調（argument_type）が「論理的」、「感情的」、または「論理的（感情的要素あり）」のいずれであるか**を判定するAIリスクアナリストです。
     
-    分析結果は、必ずJSON形式で {"classification": "分類名", "reasoning": "分類の根拠と分析結果を日本語で詳細に記述してください。"} のみ返答してください。`;
+    分析結果は、**必ず**JSON形式で {"classification": "分類名", "argument_type": "論調", "reasoning": "分類の根拠と分析結果を日本語で詳細に記述してください。"} のみ返答してください。JSON以外の文章や説明は**一切**含めないでください。
 
-    if (model === 'gemini') {
+    分類: 「${classifications}」のいずれかを選択すること。
+    論調: 「論理的」、「感情的」、または「論理的（感情的要素あり）」のいずれかを選択すること。`;
+
+    if (modelName === 'gemini-2.5-flash-preview-09-2025') {
         prompt += `
-        あなたはGoogle Searchツールを使用できます。コメント内の事実（特に虚偽情報やフェイクニュースの可能性）を検証し、分析に反映させてください。`;
+        分析を行う際、コメント内の事実（特に虚偽情報やフェイクニュースの可能性）を検証するため、最新の知識やWeb情報を参照し、分析結果（reasoning）に反映させてください。`;
     }
+    // Flash-LiteとGPT-4o miniには、Web参照を指示しません。
 
     return prompt;
 }
@@ -385,6 +472,7 @@ function generateSystemPrompt(model) {
  */
 function updateResultUI(result) {
     const classification = result.classification || "不明";
+    const argumentType = result.argument_type || "不明"; 
     const reasoning = result.reasoning || "理由が提供されませんでした。";
     const mapping = CLASSIFICATION_MAP[classification] || CLASSIFICATION_MAP["不明"];
     
@@ -393,40 +481,17 @@ function updateResultUI(result) {
     classificationDisplay.classList.add(mapping.color);
     classificationDisplay.textContent = mapping.display;
     
-    // 2. 根拠の更新
+    // 2. 論調の更新
+    argumentTypeDisplay.textContent = argumentType;
+    
+    // 3. 根拠の更新
     reasoningDisplay.textContent = reasoning;
     
-    // 3. 情報源の更新 (Geminiかつデータが存在する場合)
+    // 4. 情報源の更新 (JSON構造化出力を優先するため、この機能は非表示)
+    sourcesContainer.classList.add('hidden');
     sourcesList.innerHTML = '';
-    const isGeminiWithSources = result.isGrounded && result.groundingMetadata;
-
-    if (isGeminiWithSources) {
-        const sources = result.groundingMetadata.groundingAttributions
-            .map(attr => ({
-                uri: attr.web?.uri,
-                title: attr.web?.title,
-            }))
-            .filter(source => source.uri && source.title);
-
-        if (sources.length > 0) {
-            sourcesContainer.classList.remove('hidden');
-            sources.forEach(source => {
-                const li = document.createElement('li');
-                li.className = 'flex items-start';
-                li.innerHTML = `
-                    <svg class="w-4 h-4 mt-1 mr-2 text-blue-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M11 3a1 1 0 100 2h3a1 1 0 100-2h-3zM3 11a1 1 0 102 0v-3a1 1 0 10-2 0v3zM11 15a1 1 0 100 2h3a1 1 0 100-2h-3zM5 11a1 1 0 100 2h3a1 1 0 100-2H5zM12 7a1 1 0 100-2h1a1 1 0 100 2h-1zM5 7a1 1 0 100 2h1a1 1 0 100-2H5zM12 11a1 1 0 100 2h1a1 1 0 100-2h-1zM5 15a1 1 0 100 2h1a1 1 0 100-2H5zM15 11a1 1 0 100 2h1a1 1 0 100-2h-1zM15 15a1 1 0 100 2h1a1 1 0 100-2h-1zM15 7a1 1 0 100 2h1a1 1 0 100-2h-1zM7 3a1 1 0 100 2h1a1 1 0 100-2H7zM7 15a1 1 0 100 2h1a1 1 0 100-2H7zM3 15a1 1 0 102 0v-1a1 1 0 10-2 0v1zM3 3a1 1 0 102 0v-1a1 1 0 10-2 0v1zM15 3a1 1 0 102 0v-1a1 1 0 10-2 0v1zM15 15a1 1 0 102 0v-1a1 1 0 10-2 0v1z"></path></svg>
-                    <a href="${source.uri}" target="_blank" class="custom-link text-sm break-all">${source.title}</a>
-                `;
-                sourcesList.appendChild(li);
-            });
-        } else {
-            sourcesContainer.classList.add('hidden');
-        }
-    } else {
-        sourcesContainer.classList.add('hidden');
-    }
-
-    // 4. 結果表示エリアを表示
+    
+    // 5. 結果表示エリアを表示
     resultsArea.classList.remove("hidden");
     errorMessage.classList.add("hidden");
 }
@@ -435,7 +500,7 @@ function updateResultUI(result) {
  * エラーメッセージを表示する
  */
 function showError(msg){ 
-    errorText.textContent = msg; 
+    errorText.innerHTML = msg; 
     errorMessage.classList.remove("hidden"); 
     resultsArea.classList.add("hidden");
 }
@@ -446,7 +511,7 @@ function showError(msg){
 function setLoading(b){ 
     analyzeButton.disabled = b; 
     loadingSpinner.classList.toggle("hidden",!b); 
-    buttonText.textContent = b ? "分析中..." : "分析開始"; 
+    buttonText.textContent = b ? "分析中..." : "コメントを分析する"; 
 }
 </script>
 </body>
